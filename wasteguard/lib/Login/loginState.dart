@@ -1,5 +1,5 @@
 abstract class LoginState{
-  const LoginState();
+  LoginState();
 }
 
 class LoginInitialState extends LoginState{}
@@ -10,7 +10,7 @@ class LoginLoading extends LoginState{}
 
 class LoginFailure extends LoginState{
   final String error;
-  const LoginFailure({
+  LoginFailure({
     required this.error
   });
 

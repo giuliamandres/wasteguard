@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wasteguard/loginBloc.dart';
-import 'package:wasteguard/loginState.dart';
+import 'package:wasteguard/Login/loginBloc.dart';
+import 'package:wasteguard/Login/loginEvent.dart';
+import 'package:wasteguard/Login/loginState.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:wasteguard/homepage.dart';
+
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  LoginScreen({super.key});
+
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -25,25 +32,42 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         decoration: BoxDecoration(border: Border.all(color: Colors.black), borderRadius: BorderRadius.circular(7)),
-                        child: const TextField(
-                          decoration: InputDecoration(labelText: 'Email'),
+                        child: TextField(
+                          controller: emailController,
+                          decoration: const InputDecoration(labelText: 'Email'),
                         ),
                       ),
                       const SizedBox(height: 10),
                       Container(
                         decoration: BoxDecoration(border: Border.all(color: Colors.black), borderRadius: BorderRadius.circular(7)),
-                        child: const TextField(
-                          decoration: InputDecoration(labelText: 'Password'),
+                        child: TextField(
+                          controller: passwordController,
+                          decoration: const InputDecoration(labelText: 'Password'),
                         ),
                       ),
                       const SizedBox(height: 25),
-                      ElevatedButton(onPressed: () {}, child: const Text('Login')),
+                      ElevatedButton(onPressed: () {
+                        BlocProvider.of<LoginBloc>(context).add(
+                          LoginButtonPressed(email: emailController.text, password: passwordController.text)
+                        );
+                        if(state is LoginSuccess) {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (context) => const HomePage()),
+                          );
+                        }
+                        else if(state is LoginFailure) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to login. Please check your credentials.'), duration: Duration(seconds: 2))
+                          );
+                        }
+                      },
+                          child: const Text('Login')),
                       const SizedBox(height: 16),
                       Text.rich(
                           TextSpan(

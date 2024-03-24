@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "696018676494",
+    "project_id": "wasteguard-bcecb",
+    "storage_bucket": "wasteguard-bcecb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696018676494:android:48547ed9b11e85e6cc055f",
+        "android_client_info": {
+          "package_name": "com.example.wasteguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0kMDJXIhFe7GlQF_I0Lh02qpqpIgR5-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
