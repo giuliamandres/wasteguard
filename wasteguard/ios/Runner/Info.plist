@@ -45,5 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+    <key>NSCameraUsageDescription</key>
+    <string>WasteGuard uses the camera to scan barcodes and help you track food expiration dates.</string>
+
 </dict>
 </plist>
