@@ -1,10 +1,13 @@
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wasteguard/CreateAccount/createAccount.dart';
 import 'package:wasteguard/Login/loginBloc.dart';
 import 'package:wasteguard/Login/loginEvent.dart';
 import 'package:wasteguard/Login/loginState.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:wasteguard/forgotPassword.dart';
 import 'package:wasteguard/homepage.dart';
 
 
@@ -60,7 +63,7 @@ class LoginScreen extends StatelessWidget {
                           );
                           if(state is LoginSuccess) {
                             Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (context) => const HomePage()),
+                              MaterialPageRoute(builder: (context) => HomePage()),
                             );
                           }
                           else if(state is LoginFailure) {
@@ -71,14 +74,41 @@ class LoginScreen extends StatelessWidget {
                         },
                             child: const Text('Login')),
                         const SizedBox(height: 16),
-                        Text.rich(
-                            TextSpan(
-                                children: [
-                                  TextSpan(text: 'Create Account', style: TextStyle(color: Colors.teal.shade800, fontWeight: FontWeight.bold)),
-                                  const WidgetSpan(child: SizedBox(width: 40)),
-                                  TextSpan(text: 'Forgot Password?', style: TextStyle(color: Colors.teal.shade800, fontWeight: FontWeight.bold))
-                                ]
-                            )
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => CreateAccountScreen()));
+                                  },
+                                  child: Text(
+                                    'Create Account',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.teal.shade800,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                            ),
+                            Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => ForgotPassword()));
+                                  },
+                                  child: Text(
+                                    'Forgot Password?',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.teal.shade800,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ))
+                          ],
                         )
 
                       ],

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:wasteguard/Login/productDetailsPage.dart';
 
 class ScanBarcodePage extends StatefulWidget {
   
@@ -13,7 +14,7 @@ class ScanBarcodePage extends StatefulWidget {
 class _ScanBarcodePageState extends State<ScanBarcodePage>{
   String _scannedBarcode = '';
   bool _isScanning = false;
-  MobileScannerController _scannerController = MobileScannerController();
+  final MobileScannerController _scannerController = MobileScannerController(autoStart: true);
 
   @override
   void initState(){
@@ -34,7 +35,16 @@ class _ScanBarcodePageState extends State<ScanBarcodePage>{
     if(response.statusCode == 200) {
       final productData = jsonDecode(response.body);
       print("Product data: $productData");
-      Navigator.pop(context, productData);
+
+      final productName = productData['product']['product_name'];
+      final productImageUrl = productData['product']['image_url'] ?? "";
+
+      await Navigator.push(context, MaterialPageRoute(
+          builder: (context) => ProductDetailsPage(
+              productName: productName,
+              productImageUrl: productImageUrl
+          )
+      ));
     } else {
       print("Error fetching product data: ${response.statusCode}");
       Navigator.pop(context);

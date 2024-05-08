@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wasteguard/Login/login.dart';
 import 'package:wasteguard/Login/loginBloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 
 void main() async {
