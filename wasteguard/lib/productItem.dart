@@ -29,9 +29,19 @@ class ProductItem extends StatelessWidget {
               Text(
                 "Expires in $daysRemaining day${daysRemaining > 1 ? 's' : ''}",
                 style: TextStyle(fontSize: 16.0, color: Colors.grey),
-              )
+              ),
             ],
-          ))
+          )),
+          IconButton(
+            onPressed: () async {
+              //final recipes = await _fetchRecipesFromApis(product.name);
+              //Navigator.push(
+              //context,
+              //MaterialPageRoute(builder: (context) => RecipePage(recipes: recipes)),
+              //);
+            },
+            icon: const Icon(Icons.restaurant_outlined),
+          )
         ],
       )
     );
