@@ -4,7 +4,7 @@ class Recipe {
   final String url;
   final List<String> ingredients;
   final List<String> instructions;
-  final double duration;
+  final String duration;
 
   Recipe({
     required this.id,

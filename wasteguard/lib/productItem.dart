@@ -1,5 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:wasteguard/RecipeGeneration/recipe.dart';
+import 'package:wasteguard/RecipeGeneration/recipePage.dart';
+import 'package:wasteguard/RecipeGeneration/recipeService.dart';
 import 'package:wasteguard/product.dart';
 
 class ProductItem extends StatelessWidget {
@@ -11,13 +14,20 @@ class ProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String? imageUrl = product.imageUrl;
+
+    if(imageUrl.isEmpty || imageUrl == ""){
+      imageUrl = 'assets/placeholder.png';
+    }
     return Container(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundImage: NetworkImage(product.imageUrl),
-          ),
+          imageUrl.startsWith('assets/') ?
+              CircleAvatar(backgroundImage: AssetImage(imageUrl)) :
+              CircleAvatar(
+                backgroundImage: NetworkImage(imageUrl),
+              ),
           SizedBox(width: 16.0),
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,11 +44,37 @@ class ProductItem extends StatelessWidget {
           )),
           IconButton(
             onPressed: () async {
-              //final recipes = await _fetchRecipesFromApis(product.name);
-              //Navigator.push(
-              //context,
-              //MaterialPageRoute(builder: (context) => RecipePage(recipes: recipes)),
-              //);
+              final recipeService = RecipeService();
+              showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => Center(child: CircularProgressIndicator())
+              );
+              try {
+                final recipes = await recipeService.fetchRecipesFromApis(product);
+                Navigator.pop(context);
+
+                if(recipes != null){
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => RecipePage(recipesList: Future.value(recipes))));
+                } else {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('An error occurred while fetching recipes. Please try again later.'),
+                    ),
+                  );
+                }
+              } catch(error) {
+                Navigator.pop(context); // Close the dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('An error occurred: $error'),
+                    ),
+                );
+              }
+
+
+
             },
             icon: const Icon(Icons.restaurant_outlined),
           )
