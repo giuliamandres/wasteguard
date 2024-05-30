@@ -37,7 +37,9 @@ class ProductItem extends StatelessWidget {
                 style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
               ),
               Text(
-                "Expires in $daysRemaining day${daysRemaining > 1 ? 's' : ''}",
+                product.expired
+                ? "Expired"
+                : "Expires in $daysRemaining day${daysRemaining > 1 ? 's' : ''}",
                 style: TextStyle(fontSize: 16.0, color: Colors.grey),
               ),
             ],

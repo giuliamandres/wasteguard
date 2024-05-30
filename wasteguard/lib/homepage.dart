@@ -10,9 +10,11 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:wasteguard/allTrackedItemsPage.dart';
+import 'package:wasteguard/expiringSoonItemsPage.dart';
 import 'package:wasteguard/product.dart';
 import 'package:wasteguard/scanBarcodePage.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:workmanager/workmanager.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -27,6 +29,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Product> _products = [];
   bool _isExpiringSoon = false;
+  Timer? _backgroundNotificationTimer;
+  Timer? _expiryCheckTimer;
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -34,13 +38,46 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _initializeNotifications();
-    _fetchProducts();
+    _fetchProducts().then((_) {
+      _checkAndMarkExpiredItems();
+    });
+
+    _backgroundNotificationTimer = Timer(const Duration(minutes: 3), () {
+      for (final product in _products.where(_isExpiringSoonProduct)) {
+        _scheduleNotification(product);
+      }
+    });
+
+    _expiryCheckTimer = Timer.periodic(const Duration(days: 1), (timer) {
+      _checkAndMarkExpiredItems();
+    });
+  }
+
+  Future<void> _checkAndMarkExpiredItems() async {
+    setState(() {
+      for (var product in _products) {
+        if (product.expiryDate.isBefore(DateTime.now()) && !product.expired) {
+          product.expired = true;
+          _updateProductInDatabase(product);
+        }
+      }
+    });
+  }
+
+  Future<void> _updateProductInDatabase(Product product) async {
+    try {
+      final database = FirebaseDatabase.instance.ref();
+      await database.child('products').child(product.id).update({
+        'expired': product.expired,
+      });
+    } catch (error) {
+      print("Error updating product in database: $error");
+    }
   }
 
   Future<void> _fetchProducts() async {
     final database = FirebaseDatabase.instance.ref();
     final now = DateTime.now();
-    final oneWeekFromNow = now.add(const Duration(days: 7));
 
     try {
       final snapshot = await database.child('products').get();
@@ -69,7 +106,16 @@ class _HomePageState extends State<HomePage> {
     );
 
     final InitializationSettings initializationSettings = InitializationSettings(iOS: darwinInitializationSettings);
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+        Navigator.push(
+            context, 
+            MaterialPageRoute(builder: (context) => ExpiringSoonItemsPage(products: _products))
+        );
+      }
+    );
+
   }
 
   Future<void> _scheduleNotification(Product product) async {
@@ -85,10 +131,8 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-      final int productId = int.tryParse(product.id) ?? 0;
-
       await flutterLocalNotificationsPlugin.show(
-          productId,
+          product.name.hashCode,
           '${product.name} is expiring soon!',
           '',
           notificationDetails,
@@ -99,10 +143,14 @@ class _HomePageState extends State<HomePage> {
   bool _isExpiringSoonProduct(Product product){
     final now = DateTime.now();
     final expiryThreshold = now.add(const Duration(days: 3));
-    return product.expiryDate.isBefore(expiryThreshold);
+    return product.expiryDate.isBefore(expiryThreshold) && !product.expired;
   }
 
-
+  @override
+  void dispose() {
+    _expiryCheckTimer?.cancel(); // Cancel timer on widget disposal
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
