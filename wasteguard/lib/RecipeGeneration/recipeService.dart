@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:wasteguard/RecipeGeneration/recipe.dart';
 import 'package:wasteguard/product.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RecipeService {
-  static const apiKey = "AIzaSyA6_mFY1EWqNa8PBsO2DtJ8GR2m0y6T-eE";
-
-  //final recipes = <Recipe>[];
+  final String apiKey = dotenv.env['API_KEY'] ?? "";
   final List<Recipe> recipes = [];
 
   Future<List<Recipe>> fetchRecipesFromApis(Product product) async {
+    if(apiKey == null){
+      throw Exception('API_KEY not found.');
+    }
     final productName = product.name;
-
-
     final model = GenerativeModel(model: "gemini-1.5-flash-latest", apiKey: apiKey);
     final response = await model.generateContent([
       Content.text("Please look into the product $productName. Then generate me 5 recipes which contains the ingredient: $productName. "

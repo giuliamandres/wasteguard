@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:wasteguard/Login/productDetailsPage.dart';
+import 'package:wasteguard/homepage.dart';
 
 class ScanBarcodePage extends StatefulWidget {
   
@@ -22,7 +23,6 @@ class _ScanBarcodePageState extends State<ScanBarcodePage>{
     _scannerController.barcodes.listen((event) {
       if(event != null && event.barcodes.isNotEmpty){
         _scannedBarcode = event.barcodes.first.displayValue!;
-        print(_scannedBarcode);
         _stopScanning();
         _getProductInfo(_scannedBarcode);
       }
@@ -34,21 +34,52 @@ class _ScanBarcodePageState extends State<ScanBarcodePage>{
     final response = await http.get(url);
     if(response.statusCode == 200) {
       final productData = jsonDecode(response.body);
-      print("Product data: $productData");
 
-      final productName = productData['product']['product_name'];
-      final productImageUrl = productData['product']['image_url'] ?? "";
-
-      await Navigator.push(context, MaterialPageRoute(
-          builder: (context) => ProductDetailsPage(
-              productName: productName,
-              productImageUrl: productImageUrl
-          )
-      ));
+      if(productData != null){
+        final productName = productData['product']['product_name'];
+        final productImageUrl = productData['product']['image_url'] ?? "";
+        await Navigator.push(context, MaterialPageRoute(
+            builder: (context) => ProductDetailsPage(
+                productName: productName,
+                productImageUrl: productImageUrl
+            )
+        ));
+      } else {
+        _showProductNotFoundDialog(context, barcode);
+      }
     } else {
       print("Error fetching product data: ${response.statusCode}");
       Navigator.pop(context);
     }
+  }
+
+  void _showProductNotFoundDialog(BuildContext context, String barcode) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Product Not Found"),
+        content: Text("The scanned product was not found in our database. Would you like to add it manually?"),
+        actions: [
+          TextButton(
+            child: const Text("No"),
+            onPressed: () => Navigator.of(context).pop(), // Close the dialog
+          ),
+          TextButton(
+            child: const Text("Yes"),
+            onPressed: () {
+              // Navigate to manual product addition page, passing the barcode
+              Navigator.of(context).pop(); // Close the dialog
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => HomePage()
+                  )
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override

@@ -1,0 +1,142 @@
+@startuml
+set namespaceSeparator ::
+
+class "wasteguard::product.dart::Product" {
+  +String id
+  +String name
+  +String imageUrl
+  +DateTime expiryDate
+  +bool expired
+  +Map<String, dynamic> toJson()
+}
+
+class "wasteguard::allTrackedItemsPage.dart::AllTrackedItemsPage" {
+  +List<Product> products
+  -dynamic _deleteProductFromDatabase()
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "wasteguard::allTrackedItemsPage.dart::AllTrackedItemsPage"
+
+
+class "wasteguard::homepage.dart::_HomePageState" {
+  -List<Product> _products
+  -bool _isExpiringSoon
+  -Timer? _backgroundNotificationTimer
+  -Timer? _expiryCheckTimer
+  +FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin
+  +void initState()
+  -dynamic _checkAndMarkExpiredItems()
+  -dynamic _updateProductInDatabase()
+  -dynamic _fetchProducts()
+  -dynamic _initializeNotifications()
+  -dynamic _scheduleNotification()
+  -bool _isExpiringSoonProduct()
+  +void dispose()
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::State" <|-- "wasteguard::homepage.dart::_HomePageState"
+
+
+
+class "wasteguard::productItem.dart::ProductItem" {
+  +Product product
+  +int daysRemaining
+  +Widget build()
+}
+
+"wasteguard::productItem.dart::ProductItem" o-- "wasteguard::product.dart::Product"
+"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "wasteguard::productItem.dart::ProductItem"
+
+class "wasteguard::expiringSoonItemsPage.dart::ExpiringSoonItemsPage" {
+  +List<Product> products
+  -dynamic _deleteProductFromDatabase()
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "wasteguard::expiringSoonItemsPage.dart::ExpiringSoonItemsPage"
+
+class "wasteguard::RecipeGeneration::recipeService.dart::RecipeService" {
+  {static} +String apiKey
+  +List<Recipe> recipes
+  +dynamic fetchRecipesFromApis()
+  -Recipe? _parseRecipeFromSinglePart()
+  -List<String> _parseIngredients()
+  -List<String> _parseInstructions()
+  -String _parseCookTime()
+}
+
+
+class "wasteguard::RecipeGeneration::recipePage.dart::_RecipePageState" {
+  +Widget build()
+  -Widget _buildRecipeList()
+  -Widget _buildRecipeCard()
+  -void _showRecipeDetails()
+}
+
+"flutter::src::widgets::framework.dart::State" <|-- "wasteguard::RecipeGeneration::recipePage.dart::_RecipePageState"
+
+class "wasteguard::RecipeGeneration::recipe.dart::Recipe" {
+  +int id
+  +String title
+  +String url
+  +List<String> ingredients
+  +List<String> instructions
+  +String duration
+}
+
+
+class "wasteguard::scanBarcodePage.dart::_ScanBarcodePageState" {
+  -String _scannedBarcode
+  -bool _isScanning
+  -MobileScannerController _scannerController
+  +void initState()
+  -dynamic _getProductInfo()
+  +void dispose()
+  -void _startScanning()
+  -void _stopScanning()
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::State" <|-- "wasteguard::scanBarcodePage.dart::_ScanBarcodePageState"
+
+
+
+class "wasteguard::CreateAccount::createAccount.dart::_CreateAccountScreenState" {
+  -TextEditingController _emailController
+  -TextEditingController _passwordController
+  -GlobalKey<FormState> _formKey
+  +Widget build()
+}
+
+"wasteguard::CreateAccount::createAccount.dart::_CreateAccountScreenState" o-- "flutter::src::widgets::editable_text.dart::TextEditingController"
+"wasteguard::CreateAccount::createAccount.dart::_CreateAccountScreenState" o-- "flutter::src::widgets::framework.dart::GlobalKey<FormState>"
+"flutter::src::widgets::framework.dart::State" <|-- "wasteguard::CreateAccount::createAccount.dart::_CreateAccountScreenState"
+
+
+
+class "wasteguard::Login::login.dart::LoginScreen" {
+  +TextEditingController emailController
+  +TextEditingController passwordController
+  +Widget build()
+}
+
+"wasteguard::Login::login.dart::LoginScreen" o-- "flutter::src::widgets::editable_text.dart::TextEditingController"
+"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "wasteguard::Login::login.dart::LoginScreen"
+
+
+class "wasteguard::Login::productDetailsPage.dart::_ProductDetailsPageState" {
+  -DateTime _selectedExpiryDate
+  -String _timeRemaining
+  -void _calculateTimeRemaining()
+  +void initState()
+  +dynamic saveProductToFirebase()
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::State" <|-- "wasteguard::Login::productDetailsPage.dart::_ProductDetailsPageState"
+
+
+
+@enduml

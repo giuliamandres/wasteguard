@@ -19,8 +19,4 @@ class CreateAccountBloc extends Bloc<CreateAccountEvent, CreateAccountState> {
       }
     });
   }
-
-
-
-
 }

@@ -1,0 +1,41 @@
+@startuml Wasteguard Architecture
+
+package "Presentation Layer (UI)" {
+    [HomeScreen]
+    [ProductDetails]
+    [AllTrackedItems]
+    [ExpiringSoonItems]
+    [ScanBarcodePage]
+    [LoginScreen]
+    [CreateAccountScr]
+}
+
+package "Business Logic Layer (BLoC)" {
+    [LoginBloc]
+    [CreateAccountBloc]
+}
+
+package "Data Access Layer" {
+    [Firebase Auth]
+    [Firebase Realtime Database]
+    [OpenFoodFacts API]
+    [WorkManager]
+}
+
+[HomeScreen] -> [LoginBloc]
+[HomeScreen] -> [ProductBloc]
+[HomeScreen] -> [NotificationBloc]
+[ProductDetails] -> [ProductBloc]
+[AllTrackedItems] -> [ProductBloc]
+[ExpiringSoonItems] -> [ProductBloc]
+[ScanBarcodePage] -> [ProductBloc]
+[LoginScreen] -> [LoginBloc]
+[CreateAccountScr] -> [CreateAccountBloc]
+
+[LoginBloc] -> [Firebase Auth]
+[CreateAccountBloc] -> [Firebase Auth]
+[ProductBloc] -> [Firebase Realtime Database]
+[ProductBloc] -> [OpenFoodFacts API]
+[NotificationBloc] -> [WorkManager]
+
+@enduml

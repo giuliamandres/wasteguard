@@ -1,0 +1,42 @@
+@startuml Wasteguard Use Case Diagram (Revised)
+
+left to right direction
+
+actor User
+
+    usecase "Scan product barcode" as UC1
+    usecase "Generate recipes" as UC2
+    usecase "View all tracked items" as UC3
+    usecase "View expiring soon items" as UC4
+    usecase "View expired items" as UC5
+
+    usecase "Delete product from the list" as UC14
+
+    usecase "Log in" as UC9
+    usecase "Create account" as UC10
+
+    usecase "Fetch product info from OpenFoodFacts" as UC15
+
+    usecase "Add product to database" as UC11
+    usecase "Check and mark expired items" as UC16
+    usecase "Update product in database" as UC17
+
+User -- UC1
+User -- UC2
+User -- UC3
+User -- UC4
+User -- UC5
+User -- UC9
+User -- UC10
+
+UC1 ..> UC15 : <<include>>
+UC15 ..> UC11 : <<include>>
+UC14 ..> UC17 : <<include>>
+UC16 ..> UC17 : <<include>>
+
+UC3 ..> UC14 : <<include>>
+UC4 ..> UC14 : <<include>>
+UC5 ..> UC14 : <<include>>
+
+
+@enduml

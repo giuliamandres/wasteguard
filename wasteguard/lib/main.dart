@@ -7,16 +7,18 @@ import 'package:wasteguard/Login/loginBloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:dcdg/dcdg.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 void main() async {
-
-
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await dotenv.load();
   runApp(const MyApp());
 }
 
@@ -44,7 +46,10 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        textTheme: const TextTheme(
+          labelLarge: TextStyle(color: Colors.black)
+        ),
         useMaterial3: true,
       ),
       home: BlocProvider(
