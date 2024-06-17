@@ -1,5 +1,12 @@
+
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:wasteguard/RecipeGeneration/recipe.dart';
+import 'package:wasteguard/scannerProvider.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:wasteguard/Login/login.dart';
@@ -9,17 +16,26 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:dcdg/dcdg.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   await dotenv.load();
-  runApp(const MyApp());
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ScannerProvider(),
+      child: const MyApp(),
+    )
+  );
+  //runApp(const MyApp());
+
 }
 
 class MyApp extends StatelessWidget {

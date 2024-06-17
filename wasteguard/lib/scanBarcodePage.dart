@@ -1,26 +1,63 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
 import 'package:wasteguard/Login/productDetailsPage.dart';
 import 'package:wasteguard/homepage.dart';
+import 'package:wasteguard/insertProductNotFound.dart';
+import 'package:wasteguard/scannerProvider.dart';
 
 class ScanBarcodePage extends StatefulWidget {
-  
+
   @override
   _ScanBarcodePageState createState() => _ScanBarcodePageState();
 }
 
-class _ScanBarcodePageState extends State<ScanBarcodePage>{
+class _ScanBarcodePageState extends State<ScanBarcodePage> with WidgetsBindingObserver{
   String _scannedBarcode = '';
   bool _isScanning = false;
-  final MobileScannerController _scannerController = MobileScannerController(autoStart: true);
+  MobileScannerController? _scannerController;
+  StreamSubscription<String>? _barcodeSubscription;
 
-  @override
+  bool isTesting = false;
+  late ScannerProvider _scannerProvider;
+
+  /*@override
   void initState(){
     super.initState();
-    _scannerController.barcodes.listen((event) {
+    WidgetsBinding.instance.addObserver(this);
+    _initializeScanner();
+  }*/
+
+  @override
+  void initState() {
+    super.initState();
+    _scannerProvider = Provider.of<ScannerProvider>(context, listen: false);
+    WidgetsBinding.instance.addObserver(this);
+
+    // Ensure the scanner is started after the first frame to avoid race conditions
+    //WidgetsBinding.instance.addPostFrameCallback((_) {
+      //_scannerProvider.startScanning();
+    //});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      Provider.of<ScannerProvider>(context, listen: false).startScanning();
+    }
+  }
+
+
+  void _initializeScanner() {
+    _scannerController = MobileScannerController(facing: CameraFacing.back);
+    _isScanning = true;
+    _scannerController!.barcodes.listen((event) {
       if(event != null && event.barcodes.isNotEmpty){
         _scannedBarcode = event.barcodes.first.displayValue!;
         _stopScanning();
@@ -30,26 +67,35 @@ class _ScanBarcodePageState extends State<ScanBarcodePage>{
   }
 
   Future<void> _getProductInfo(String barcode) async {
-    final url = Uri.parse("https://world.openfoodfacts.org/api/v0/product/$barcode.json");
-    final response = await http.get(url);
-    if(response.statusCode == 200) {
-      final productData = jsonDecode(response.body);
-
-      if(productData != null){
-        final productName = productData['product']['product_name'];
-        final productImageUrl = productData['product']['image_url'] ?? "";
-        await Navigator.push(context, MaterialPageRoute(
-            builder: (context) => ProductDetailsPage(
-                productName: productName,
-                productImageUrl: productImageUrl
-            )
-        ));
-      } else {
-        _showProductNotFoundDialog(context, barcode);
-      }
+    if(isTesting){
+      await Future.delayed(const Duration(milliseconds: 500));
+      _showProductNotFoundDialog(context, barcode);
     } else {
-      print("Error fetching product data: ${response.statusCode}");
-      Navigator.pop(context);
+      final url = Uri.parse("https://world.openfoodfacts.org/api/v0/product/$barcode.json");
+      final response = await http.get(url);
+      if(response.statusCode == 200) {
+        final productData = await compute(jsonDecode, response.body);
+        //final productData = jsonDecode(response.body);
+
+        if(productData['product'] != null && productData['status'] == 1){
+          final productName = productData['product']['product_name'];
+          final productImageUrl = productData['product']['image_url'] ?? "";
+          //await Future.delayed(Duration.zero);
+
+          if(mounted){
+            await Navigator.push(context, MaterialPageRoute(
+                builder: (context) => ProductDetailsPage(
+                    productName: productName,
+                    productImageUrl: productImageUrl
+                )));
+          }
+        } else {
+          _showProductNotFoundDialog(context, barcode);
+        }
+      } else {
+        print("Error fetching product data: ${response.statusCode}");
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -72,7 +118,7 @@ class _ScanBarcodePageState extends State<ScanBarcodePage>{
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => HomePage()
+                      builder: (context) => InsertProductNotFound(barcode: barcode)
                   )
               );
             },
@@ -84,42 +130,63 @@ class _ScanBarcodePageState extends State<ScanBarcodePage>{
 
   @override
   void dispose(){
-    _scannerController.dispose();
+    //final scannerProvider = Provider.of<ScannerProvider>(context, listen: false);
+    //scannerProvider.stopScanning();
+    //_scannerController?.dispose();
+    //_barcodeSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   void _startScanning() async {
-    await _scannerController.start();
-    setState(() => _isScanning = true);
+    if (_scannerController == null) {
+      _initializeScanner();
+    }
+    await _scannerController!.start();
+    if (mounted) {
+      setState(() => _isScanning = true);
+    }
   }
 
   void _stopScanning() async {
-    await _scannerController.stop();
-    setState(() => _isScanning = false);
+    await _scannerController?.stop();
+    if(mounted){
+      setState(() => _isScanning = false);
+    }
+
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      body: Stack( // Use Stack to overlay the loading indicator
         children: [
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: (barcode) {
-              if(barcode != null){
-                final code = barcode.raw;
-              }
+          Consumer<ScannerProvider>(
+            builder: (context, scannerProvider, _) {
+              return MobileScanner(
+                controller: scannerProvider.scannerController!,
+                onDetect: (capture) async {
+                  final code = capture.barcodes.firstOrNull?.rawValue ?? '';
+                  if (code.isNotEmpty) {
+                    scannerProvider.stopScanning();
+                    setState(() => _isScanning = true); // Show loading
+                    await _getProductInfo(code);
+                    setState(() => _isScanning = false); // Hide loading
+                  }
+                },
+              );
             },
           ),
-          Builder(builder: (context) => _isScanning ? Container(
-            color: Colors.black.withOpacity(0.5),
-            child: Center(child: CircularProgressIndicator()),
-          ) : Container(),
-          )
+          if (_isScanning) // Conditionally show the loading indicator
+            Container(
+              color: Colors.black.withOpacity(0.5), // Semi-transparent background
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  
 }

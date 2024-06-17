@@ -47,6 +47,8 @@
 	<true/>
     <key>NSCameraUsageDescription</key>
     <string>WasteGuard uses the camera to scan barcodes and help you track food expiration dates.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>WasteGuard uses the camera to allow users to upload product images.</string>
 
 </dict>
 </plist>

@@ -20,6 +20,7 @@ class ProductDetailsPage extends StatefulWidget {
 class _ProductDetailsPageState extends State<ProductDetailsPage> {
   DateTime _selectedExpiryDate = DateTime.now();
   String _timeRemaining = '';
+  bool _isNavigating = false;
 
   void _calculateTimeRemaining(){
     final now = DateTime.now();
@@ -46,99 +47,121 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final reference = database.ref().child('products').push();
     product.id = reference.key!;
     await reference.set(product.toJson());
+
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              SizedBox(height: 20.0),
-              widget.productImageUrl.isNotEmpty ? Image.network(widget.productImageUrl) : Container(
-                height: 200,
-                child: Center(
-                  child: Text("No product image available"),
-                ),
-              ),
-              SizedBox(height: 16.0),
-              Text(
-                widget.productName,
-                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16.0),
-              Row(
+    return PopScope(
+      canPop: true,
+        onPopInvoked: (didPop) async {
+          if(didPop && !_isNavigating) {
+            _isNavigating = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => HomePage()),
+                      (route) => route.isFirst
+              );
+              _isNavigating = false;
+            });
+          }
+        },
+        child: Scaffold(
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
                 children: [
-                  Text("Expiry date: ", style: TextStyle(fontSize: 18.0)),
-                  Spacer(),
-                  Text(DateFormat('y-MM-d').format(_selectedExpiryDate)),
-                  IconButton(
-                      onPressed: () async {
-                        final selectedDate = await showDatePicker(
-                            context: context, 
+                  SizedBox(height: 20.0),
+                  widget.productImageUrl.isNotEmpty ? Image.network(widget.productImageUrl) : Container(
+                    height: 200,
+                    child: const Center(
+                      child: Text("No product image available"),
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  Text(
+                    widget.productName,
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      Text("Expiry date: ", style: TextStyle(fontSize: 18.0)),
+                      Spacer(),
+                      Text(DateFormat('y-MM-d').format(_selectedExpiryDate)),
+                      IconButton(
+                        onPressed: () async {
+                          final selectedDate = await showDatePicker(
+                            context: context,
                             initialDate: _selectedExpiryDate,
-                            firstDate: DateTime.now(), 
+                            firstDate: DateTime.now(),
                             lastDate: DateTime(2100),
+                          );
+                          if(selectedDate != null){
+                            setState(() {
+                              _selectedExpiryDate = selectedDate;
+                              _calculateTimeRemaining();
+                            });
+                          }
+                        },
+                        icon: Icon(Icons.calendar_today),
+                      )
+                    ],
+                  ),
+                  SizedBox(height: 16.0),
+                  Text("Time remaining: $_timeRemaining", style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 16.0),
+                  ElevatedButton(
+                      onPressed: () async {
+                        final database = FirebaseDatabase.instance;
+                        final reference = database.ref().child('products').push();
+                        final String id = reference.key!;
+                        final product = Product(
+                            id: id,
+                            name: widget.productName,
+                            imageUrl: widget.productImageUrl,
+                            expiryDate: _selectedExpiryDate
                         );
-                        if(selectedDate != null){
-                          setState(() {
-                            _selectedExpiryDate = selectedDate;
-                            _calculateTimeRemaining();
-                          });
+                        try{
+                          await saveProductToFirebase(product);
+                          if(mounted){
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Product saved successfully!'),
+                                  action: SnackBarAction(
+                                    label: 'OK',
+                                    onPressed: () {
+                                      _isNavigating = true;
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => HomePage()), (route) => route.isFirst);
+                                        _isNavigating = false;
+                                      });
+                                    },
+                                  ),
+                                )
+                            );
+                          }
+                        } catch (error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to save product: $error'),
+                                action: SnackBarAction(
+                                  label: 'OK',
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
+                                  },
+                                ),
+                              )
+                          );
                         }
-                      }, 
-                      icon: Icon(Icons.calendar_today),
-                  )
+                      },
+                      child: Text("Save")),
                 ],
               ),
-              SizedBox(height: 16.0),
-              Text("Time remaining: $_timeRemaining", style: TextStyle(fontSize: 18)),
-              SizedBox(height: 16.0),
-              ElevatedButton(
-                  onPressed: () async {
-                    final database = FirebaseDatabase.instance;
-                    final reference = database.ref().child('products').push();
-                    final String id = reference.key!;
-                    final product = Product(
-                        id: id,
-                        name: widget.productName,
-                        imageUrl: widget.productImageUrl,
-                        expiryDate: _selectedExpiryDate
-                    );
-                    try{
-                      await saveProductToFirebase(product);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Product saved successfully!'),
-                          action: SnackBarAction(
-                            label: 'OK',
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-                            },
-                          ),
-                        )
-                      );
-                    } catch (error) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to save product: $error'),
-                          action: SnackBarAction(
-                            label: 'OK',
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-                            },
-                          ),
-                        )
-                      );
-                    }
-                    },
-                  child: Text("Save")),
-            ],
+            ),
           ),
         ),
-      ),
     );
   }
 }

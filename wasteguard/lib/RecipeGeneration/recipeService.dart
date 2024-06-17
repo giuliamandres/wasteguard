@@ -9,7 +9,7 @@ class RecipeService {
   final String apiKey = dotenv.env['API_KEY'] ?? "";
   final List<Recipe> recipes = [];
 
-  Future<List<Recipe>> fetchRecipesFromApis(Product product) async {
+Future<List<Recipe>> fetchRecipesFromApis(Product product) async {
     if(apiKey == null){
       throw Exception('API_KEY not found.');
     }
@@ -25,21 +25,14 @@ class RecipeService {
 
     final parsedRecipes = [];
     for(var recipePart in recipesText!){
-      print("EACH RECIPE: $recipePart");
       if(recipePart.isNotEmpty){
         final oneRecipe = _parseRecipeFromSinglePart(recipePart);
-        print("ONE RECIPE INFO:\n");
-        print(oneRecipe?.title);
-        print(oneRecipe?.ingredients);
-        print(oneRecipe?.instructions);
-        print(oneRecipe?.duration);
         if(oneRecipe != null){
           recipes.add(oneRecipe);
         }
       }
     }
     return recipes;
-
   }
 
   Recipe? _parseRecipeFromSinglePart(String recipePart){

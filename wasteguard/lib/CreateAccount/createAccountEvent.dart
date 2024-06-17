@@ -1,12 +1,13 @@
 abstract class CreateAccountEvent {}
 
 class CreateAccountButtonPressed extends CreateAccountEvent {
+  final String username;
   final String email;
   final String password;
 
-  CreateAccountButtonPressed({required this.email, required this.password});
+  CreateAccountButtonPressed({required this.username, required this.email, required this.password});
 
   @override
   String toString() =>
-      'CreateAccountButtonPressed { email: $email, password: $password }';
+      'CreateAccountButtonPressed {username: $username, email: $email, password: $password }';
 }

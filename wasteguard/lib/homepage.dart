@@ -9,17 +9,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 import 'package:wasteguard/allTrackedItemsPage.dart';
 import 'package:wasteguard/expiringSoonItemsPage.dart';
 import 'package:wasteguard/product.dart';
 import 'package:wasteguard/scanBarcodePage.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:wasteguard/scannerProvider.dart';
 import 'package:workmanager/workmanager.dart';
 
 
 class HomePage extends StatefulWidget {
-  final String userName = "Giulia";
-
   HomePage({Key? key}) : super(key: key);
 
   @override
@@ -28,9 +28,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Product> _products = [];
-  bool _isExpiringSoon = false;
   Timer? _backgroundNotificationTimer;
   Timer? _expiryCheckTimer;
+  final database = FirebaseDatabase.instance.ref();
+  String? _username;
+  bool _isExpiringSoon = false;
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -42,7 +44,8 @@ class _HomePageState extends State<HomePage> {
       _checkAndMarkExpiredItems();
     });
 
-    _backgroundNotificationTimer = Timer(const Duration(minutes: 3), () {
+    _fetchUsername();
+    _backgroundNotificationTimer = Timer(const Duration(minutes: 1), () {
       for (final product in _products.where(_isExpiringSoonProduct)) {
         _scheduleNotification(product);
       }
@@ -52,6 +55,8 @@ class _HomePageState extends State<HomePage> {
       _checkAndMarkExpiredItems();
     });
   }
+
+
 
   Future<void> _checkAndMarkExpiredItems() async {
     setState(() {
@@ -66,7 +71,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _updateProductInDatabase(Product product) async {
     try {
-      final database = FirebaseDatabase.instance.ref();
       await database.child('products').child(product.id).update({
         'expired': product.expired,
       });
@@ -76,9 +80,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchProducts() async {
-    final database = FirebaseDatabase.instance.ref();
     final now = DateTime.now();
-
     try {
       final snapshot = await database.child('products').get();
       if(snapshot.exists){
@@ -111,7 +113,7 @@ class _HomePageState extends State<HomePage> {
       onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
         Navigator.push(
             context, 
-            MaterialPageRoute(builder: (context) => ExpiringSoonItemsPage(products: _products))
+            MaterialPageRoute(builder: (context) => AllTrackedItemsPage(products: _products.where((element) => _isExpiringSoonProduct(element)).toList()))
         );
       }
     );
@@ -120,7 +122,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _scheduleNotification(Product product) async {
     final now = DateTime.now();
-    final expiryThreshold = now.add(const Duration(days: 2));
+    final expiryThreshold = now.add(const Duration(days: 3));
 
     if(product.expiryDate.isBefore(expiryThreshold) && !product.expired) {
       const notificationDetails = NotificationDetails(
@@ -146,114 +148,140 @@ class _HomePageState extends State<HomePage> {
     return product.expiryDate.isBefore(expiryThreshold) && !product.expired;
   }
 
+
+
   @override
   void dispose() {
     _expiryCheckTimer?.cancel(); // Cancel timer on widget disposal
     super.dispose();
   }
 
+  Future<void> _fetchUsername() async {
+    try {
+      final userSnapshot = await database.child('users').child(FirebaseAuth.instance.currentUser!.uid).get();
+
+      if(userSnapshot.exists) {
+        final userData = userSnapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          _username = userData['username'];
+        });
+      }
+    } catch (error) {
+      print("Error fetching username: $error");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hello, ${widget.userName}!'),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.settings))
+        title: Text('Hello, ${_username ?? 'User'}!'),
+      ),
+      body: Stack(
+        children: [
+          FractionallySizedBox(
+            heightFactor: 0.7,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  //height: 100,
+                  child: Card(
+                    color: Colors.lightGreen.shade100,
+                    child: Center(
+                      child: ListTile(
+                        title: const Align(
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.access_alarm, size: 50),
+                              SizedBox(width: 10),
+                              Expanded(child: AutoSizeText('Items Expiring Soon',
+                                  style: TextStyle(
+                                    fontSize: 30, fontWeight: FontWeight.bold),
+                                    minFontSize: 25.0,
+                                    maxFontSize: 40,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis))
+                            ],
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => AllTrackedItemsPage(products: _products.where((element) => _isExpiringSoonProduct(element)).toList())));
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  //height: 100,
+                  child: Card(
+                    color: Colors.lightGreen.shade100,
+                    child: Center(
+                      child: ListTile(
+                        title: const Align(
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.list, size: 50),
+                              SizedBox(width: 10),
+                              Text('All Tracked Items', style: TextStyle(
+                                  fontSize: 30, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => AllTrackedItemsPage(products: _products)));
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  //height: 100,
+                  child: Card(
+                    color: Colors.lightGreen.shade100,
+                    child: Center(
+                      child: ListTile(
+                        title: const Align(
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.access_time, size: 50),
+                              SizedBox(width: 10),
+                              Text('Expired Items', style: TextStyle(
+                                  fontSize: 30, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => AllTrackedItemsPage(products: _products.where((product) => product.expired).toList())));
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
-      body: FractionallySizedBox(
-        heightFactor: 0.7,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              //height: 100,
-              child: Card(
-                color: Colors.teal.shade100,
-                child: Center(
-                  child: ListTile(
-                    title: const Align(
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.access_alarm, size: 50),
-                          SizedBox(width: 10),
-                          Expanded(child: AutoSizeText('Items Expiring Soon',
-                              style: TextStyle(
-                                  fontSize: 30, fontWeight: FontWeight.bold),
-                              minFontSize: 25.0,
-                              maxFontSize: 40,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis))
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => ScanBarcodePage()));
 
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                      for (final product in _products.where((element) => _isExpiringSoonProduct(element))) {
-                        _scheduleNotification(product);
-                      }
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => AllTrackedItemsPage(products: _products.where((element) => _isExpiringSoonProduct(element)).toList())));
-                    },
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              //height: 100,
-              child: Card(
-                color: Colors.teal.shade100,
-                child: Center(
-                  child: ListTile(
-                    title: const Align(
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.list, size: 50),
-                          SizedBox(width: 10),
-                          Text('All Tracked Items', style: TextStyle(
-                              fontSize: 30, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => AllTrackedItemsPage(products: _products)));
-                    },
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              //height: 100,
-              child: Card(
-                color: Colors.teal.shade100,
-                child: Center(
-                  child: ListTile(
-                    title: const Align(
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.access_time, size: 50),
-                          SizedBox(width: 10),
-                          Text('Expired Items', style: TextStyle(
-                              fontSize: 30, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                    onTap: () {},
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          if (result == true) {
+            Provider.of<ScannerProvider>(context, listen: false).startScanning();
+          }
+        },
+        backgroundColor: Colors.grey.shade300,
+        child: const Icon(Icons.qr_code_scanner, color: Colors.green),
       ),
 
-
-      floatingActionButton: FloatingActionButton(
+      /*floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(context,
               MaterialPageRoute(builder: (context) => ScanBarcodePage()));
@@ -262,8 +290,8 @@ class _HomePageState extends State<HomePage> {
           }
         },
         backgroundColor: Colors.grey.shade300,
-        child: const Icon(Icons.qr_code_scanner, color: Colors.teal),
-      ),
+        child: const Icon(Icons.qr_code_scanner, color: Colors.green),
+      ),*/
     );
   }
 

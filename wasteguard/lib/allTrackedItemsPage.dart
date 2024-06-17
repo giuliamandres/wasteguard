@@ -23,39 +23,45 @@ class AllTrackedItemsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView.builder(
-          itemBuilder: (context, index) {
-            final Product product = products[index];
-            return Dismissible(
-                key: Key(product.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Icon(Icons.delete, color: Colors.white),
-                ),
-                onDismissed: (direction) async {
-                  final removedProduct = products.removeAt(index);
-
-                  try{
-                    await _deleteProductFromDatabase(removedProduct);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text("${product.name} dismissed"),
+      body:
+          Stack(
+            children: [
+              ListView.builder(
+                itemBuilder: (context, index) {
+                  final Product product = products[index];
+                  return Dismissible(
+                      key: Key(product.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Icon(Icons.delete, color: Colors.white),
                       ),
-                    );
-                  } catch (error) {
-                    print("Error deleting product: $error");
-                    products.insert(index, removedProduct);
-                  }
+                      onDismissed: (direction) async {
+                        final removedProduct = products.removeAt(index);
 
+                        try{
+                          await _deleteProductFromDatabase(removedProduct);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("${product.name} dismissed"),
+                            ),
+                          );
+                        } catch (error) {
+                          print("Error deleting product: $error");
+                          products.insert(index, removedProduct);
+                        }
+
+                      },
+                      child: ProductItem(product: product,)
+                  );
                 },
-                child: ProductItem(product: product,)
-            );
-          },
-        itemCount: products.length,
-      )
+                itemCount: products.length,
+              )
+            ],
+          )
+
     );
   }
 }

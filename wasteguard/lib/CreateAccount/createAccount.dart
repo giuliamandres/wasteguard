@@ -14,6 +14,7 @@ class CreateAccountScreen extends StatefulWidget {
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final _formKey = GlobalKey<FormState>(); // For form validation
 
   @override
@@ -31,6 +32,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               key: _formKey, // Assign the form key
               child: Column(
                 children: [
+                  TextField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(labelText: 'Username'),
+                  ),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
@@ -52,6 +58,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           if (_formKey.currentState!.validate()) { // Validate form before submitting
                             BlocProvider.of<CreateAccountBloc>(context).add(
                               CreateAccountButtonPressed(
+                                username: _usernameController.text,
                                 email: _emailController.text,
                                 password: _passwordController.text,
                               ),

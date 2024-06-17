@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
@@ -22,10 +24,15 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+
 android {
     namespace "com.example.wasteguard"
     compileSdk flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
+
+    defaultConfig {
+        minSdkVersion 21
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

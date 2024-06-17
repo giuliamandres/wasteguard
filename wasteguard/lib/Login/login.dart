@@ -14,11 +14,16 @@ import 'package:wasteguard/forgotPassword.dart';
 import 'package:wasteguard/homepage.dart';
 
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   LoginScreen({super.key});
 
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +93,19 @@ class LoginScreen extends StatelessWidget {
                                     borderSide: BorderSide(width: 2.0, color: Colors.black!),
                                     borderRadius: BorderRadius.circular(10.0),
                                   ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                                      color: Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscureText = !_obscureText;
+                                      });
+                                    },
+                                  )
                                 ),
+                                obscureText: _obscureText,
                               ),
                             ),
                             const SizedBox(height: 25),
@@ -146,13 +163,11 @@ class LoginScreen extends StatelessWidget {
                                           fontWeight: FontWeight.bold,
                                           decoration: TextDecoration.underline,
                                           decorationColor: Colors.white,
-
                                         ),
                                       ),
                                     ))
                               ],
                             )
-
                           ],
                         ),
                       )
