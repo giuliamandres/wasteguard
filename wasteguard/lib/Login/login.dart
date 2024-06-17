@@ -30,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocBuilder<LoginBloc, LoginState>(
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: Colors.grey[200],
           body: Stack(
             children: [
               ImageFiltered(
@@ -45,20 +44,38 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               Container(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withOpacity(0.55),
               ),
               Center(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      Container( // Container for the image
+                        padding: const EdgeInsets.fromLTRB(70.0, 60.0, 70.0, 20.0),
+                        child: Image.asset(
+                          'assets/logo.png', // Replace with your actual logo path
+                          width: 150.0, // Adjust width as needed
+                          height: 150.0, // Adjust height as needed
+                        ),
+                      ),
                       Container(
-                        padding: const EdgeInsets.fromLTRB(70.0, 200.0, 70.0, 100.0),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        padding: const EdgeInsets.fromLTRB(70.0, 0.0, 70.0, 100.0), // Removed top padding
+                        child: const Column(  // Wrap AutoSizeText with a Column
+                          mainAxisAlignment: MainAxisAlignment.center,  // Center the text vertically within the Column 
                           children: [
-                            Expanded(child: AutoSizeText("Wasteguard", style: TextStyle(fontSize: 33.0, fontWeight: FontWeight.bold, color: Colors.white), minFontSize:  25.0, maxFontSize: 45, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                            SizedBox(width: 5),
-                            Icon(Icons.warning_amber_rounded, size: 35.0, color: Colors.white,)
+                            AutoSizeText(
+                              "Wasteguard",
+                              style: TextStyle(
+                                fontSize: 33.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              minFontSize: 25.0,
+                              maxFontSize: 45,
+                              maxLines: 1,
+                              textAlign: TextAlign.center, // Center the text horizontally within the Column
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
                       ),

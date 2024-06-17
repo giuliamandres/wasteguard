@@ -250,7 +250,7 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.access_time, size: 50),
+                              Icon(Icons.warning_outlined, size: 50),
                               SizedBox(width: 10),
                               Text('Expired Items', style: TextStyle(
                                   fontSize: 30, fontWeight: FontWeight.bold)),

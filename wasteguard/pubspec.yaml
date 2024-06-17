@@ -82,6 +82,7 @@ flutter:
     - assets/homepage.png
     - assets/white.jpeg
     - assets/5942328202191_ingredients.jpg
+    - assets/logo.png
     - .env
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
