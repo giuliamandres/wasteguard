@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wasteguard/RecipeGeneration/recipe.dart';
 import 'package:wasteguard/scannerProvider.dart';
+import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:wasteguard/Login/login.dart';

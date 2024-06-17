@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -12,11 +13,13 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:wasteguard/allTrackedItemsPage.dart';
 import 'package:wasteguard/expiringSoonItemsPage.dart';
+import 'package:wasteguard/notificationManager.dart';
 import 'package:wasteguard/product.dart';
 import 'package:wasteguard/scanBarcodePage.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:wasteguard/scannerProvider.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -39,6 +42,18 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    Workmanager().initialize(
+        callbackDispatcher, // Pass the method reference
+        isInDebugMode: true
+    );
+    Workmanager().registerPeriodicTask(
+      "be.tramckrijte.workmanagerExample.iOSBackgroundAppRefresh",
+      "notificationTask",
+      frequency: Duration(minutes: 2),
+    );
+
+    _loadProductsFromSharedPreferences();
     _initializeNotifications();
     _fetchProducts().then((_) {
       _checkAndMarkExpiredItems();
@@ -120,7 +135,7 @@ class _HomePageState extends State<HomePage> {
 
   }
 
-  Future<void> _scheduleNotification(Product product) async {
+  static Future<void> _scheduleNotification(Product product) async {
     final now = DateTime.now();
     final expiryThreshold = now.add(const Duration(days: 3));
 
@@ -133,7 +148,8 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-      await flutterLocalNotificationsPlugin.show(
+      final plugin = NotificationsManager().flutterLocalNotificationsPlugin;
+      await plugin.show(
           product.name.hashCode,
           '${product.name} is expiring soon!',
           '',
@@ -142,13 +158,68 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  bool _isExpiringSoonProduct(Product product){
+  static bool _isExpiringSoonProduct(Product product){
     final now = DateTime.now();
     final expiryThreshold = now.add(const Duration(days: 3));
     return product.expiryDate.isBefore(expiryThreshold) && !product.expired;
   }
 
+  Future<void> _loadProductsFromSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? productsJson = prefs.getString('products');
+    if (productsJson != null) {
+      setState(() {
+        _products = (json.decode(productsJson) as List<dynamic>) // Decode the JSON string directly
+            .map((item) => Product.fromJson(item)) // Convert each item to a Product object
+            .toList();
+      });
+    } else {
+      _fetchProducts().then((_) { // Fetch from Firebase if not in SharedPreferences
+        _saveProductsToSharedPreferences(); // Save the fetched products immediately
+      });
+    }
+  }
 
+  Future<void> _saveProductsToSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String productsJson = json.encode(_products.map((product) => product.toJson()).toList()); // Encode each product to JSON individually
+    await prefs.setString('products', productsJson);
+  }
+
+  static void callbackDispatcher() {
+    Workmanager().executeTask((taskName, inputData) async {
+      if (taskName == "notificationTask") {
+        // Load products from SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? productsJson = prefs.getString('products');
+
+        if (productsJson != null) {
+          List<Product> products = (json.decode(productsJson) as List<dynamic>)
+              .map((item) => Product.fromJson(item))
+              .toList();
+
+          // Check and send notifications
+          for (final product in products.where(_isExpiringSoonProduct)) {
+            await _scheduleNotification(product);
+          }
+
+          // Check and mark expired items
+          for (var product in products) {
+            if (product.expiryDate.isBefore(DateTime.now()) && !product.expired) {
+              product.expired = true;
+            }
+          }
+
+          // Save updated products back to SharedPreferences
+          String updatedProductsJson = json.encode(products.map((product) => product.toJson()).toList());
+          await prefs.setString('products', updatedProductsJson);
+        }
+
+        return Future.value(true); // Indicate success
+      }
+      return Future.value(false); // Indicate failure
+    });
+  }
 
   @override
   void dispose() {

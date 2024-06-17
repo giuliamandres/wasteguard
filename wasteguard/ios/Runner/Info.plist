@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>task-identifier</string>
+		<string>be.tramckrijte.workmanagerExample.iOSBackgroundAppRefresh</string>
+	</array>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -24,6 +31,21 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>WasteGuard uses the camera to scan barcodes and help you track food expiration dates.</string>
+	<key>NSExtensionAttributes</key>
+	<dict>
+		<key>RequestsOpenAccess</key>
+		<true/>
+	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>WasteGuard uses the camera to allow users to upload product images.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -41,14 +63,12 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-    <key>NSCameraUsageDescription</key>
-    <string>WasteGuard uses the camera to scan barcodes and help you track food expiration dates.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>WasteGuard uses the camera to allow users to upload product images.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+    	<string>task-identifier</string>
 
+    	<!-- Register a periodic task in iOS 13+ -->
+    	<string>be.tramckrijte.workmanagerExample.iOSBackgroundAppRefresh</string>
+    </array>
 </dict>
 </plist>
