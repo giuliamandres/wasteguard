@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -5,13 +6,8 @@ import 'package:wasteguard/homepage.dart';
 import 'package:wasteguard/product.dart';
 
 class ProductDetailsPage extends StatefulWidget {
-  final String productName;
-  final String productImageUrl;
-
-  const ProductDetailsPage({
-    required this.productName,
-    required this.productImageUrl
-});
+  final Product product;
+  const ProductDetailsPage({required this.product});
 
   @override
   _ProductDetailsPageState createState() => _ProductDetailsPageState();
@@ -39,14 +35,30 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   @override
   void initState(){
     super.initState();
+    _selectedExpiryDate = widget.product.expiryDate;
     _calculateTimeRemaining();
   }
 
   Future<void> saveProductToFirebase(Product product) async {
     final database = FirebaseDatabase.instance;
-    final reference = database.ref().child('products').push();
-    product.id = reference.key!;
-    await reference.set(product.toJson());
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final reference = database.ref().child('users/$userId/products'); // Reference the user's products
+    try {
+      final snapshot = await reference.child(product.id).get();
+      if (snapshot.exists) {
+        // Update existing product
+        await reference.child(product.id).update({
+          'expiryDate': _selectedExpiryDate.millisecondsSinceEpoch,
+        });
+      } else {
+        // Add new product (this shouldn't happen in this case, but it's a good practice to include)
+        await reference.push().set(product.toJson());
+      }
+
+      // ... success handling and navigation (similar to before)
+    } catch (error) {
+      // ... error handling (similar to before)
+    }
 
   }
 
@@ -73,7 +85,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               child: Column(
                 children: [
                   SizedBox(height: 20.0),
-                  widget.productImageUrl.isNotEmpty ? Image.network(widget.productImageUrl) : Container(
+                  widget.product.imageUrl.isNotEmpty ? Image.network(widget.product.imageUrl) : Container(
                     height: 200,
                     child: const Center(
                       child: Text("No product image available"),
@@ -81,7 +93,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ),
                   SizedBox(height: 16.0),
                   Text(
-                    widget.productName,
+                    widget.product.name,
                     style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 16.0),
@@ -114,17 +126,12 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   SizedBox(height: 16.0),
                   ElevatedButton(
                       onPressed: () async {
+                        widget.product.expiryDate = _selectedExpiryDate;
                         final database = FirebaseDatabase.instance;
                         final reference = database.ref().child('products').push();
                         final String id = reference.key!;
-                        final product = Product(
-                            id: id,
-                            name: widget.productName,
-                            imageUrl: widget.productImageUrl,
-                            expiryDate: _selectedExpiryDate
-                        );
                         try{
-                          await saveProductToFirebase(product);
+                          await saveProductToFirebase(widget.product);
                           if(mounted){
                             ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:wasteguard/Login/productDetailsPage.dart';
 import 'package:wasteguard/homepage.dart';
 import 'package:wasteguard/insertProductNotFound.dart';
+import 'package:wasteguard/product.dart';
 import 'package:wasteguard/scannerProvider.dart';
 
 class ScanBarcodePage extends StatefulWidget {
@@ -67,12 +70,16 @@ class _ScanBarcodePageState extends State<ScanBarcodePage> with WidgetsBindingOb
   }
 
   Future<void> _getProductInfo(String barcode) async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final database = FirebaseDatabase.instance.ref();
+
     if(isTesting){
       await Future.delayed(const Duration(milliseconds: 500));
       _showProductNotFoundDialog(context, barcode);
     } else {
       final url = Uri.parse("https://world.openfoodfacts.org/api/v0/product/$barcode.json");
       final response = await http.get(url);
+
       if(response.statusCode == 200) {
         final productData = await compute(jsonDecode, response.body);
         //final productData = jsonDecode(response.body);
@@ -82,11 +89,20 @@ class _ScanBarcodePageState extends State<ScanBarcodePage> with WidgetsBindingOb
           final productImageUrl = productData['product']['image_url'] ?? "";
           //await Future.delayed(Duration.zero);
 
+          final newProduct = Product(
+            id: barcode, // You might want to use a different ID if barcodes aren't unique
+            name: productName,
+            userId: userId, // Associate with user
+            imageUrl: productImageUrl,
+            expiryDate: DateTime.now(),
+            // ... other properties
+          );
+          await database.child('users/$userId/products').child(barcode).set(newProduct.toJson());
+
           if(mounted){
             await Navigator.push(context, MaterialPageRoute(
                 builder: (context) => ProductDetailsPage(
-                    productName: productName,
-                    productImageUrl: productImageUrl
+                    product: newProduct
                 )));
           }
         } else {

@@ -2,8 +2,9 @@ class Product {
   String id;
   final String name;
   final String imageUrl;
-  final DateTime expiryDate;
+  DateTime expiryDate;
   bool expired = false;
+  final String userId;
 
   Product({
     required this.id,
@@ -11,6 +12,8 @@ class Product {
     required this.imageUrl,
     required this.expiryDate,
     this.expired = false,
+    required this.userId,
+
   });
 
   Map<String, dynamic> toJson() => {
@@ -19,13 +22,15 @@ class Product {
     'image' : imageUrl,
     'expiryDate' : expiryDate.millisecondsSinceEpoch,
     'expired' : expired,
+    'userId' : userId
   };
 
   factory Product.fromJson(Map<dynamic, dynamic> json) => Product(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    imageUrl: json['image'] as String,
+    id: json['id'] ?? '',
+    name: json['name'] ?? '',
+    imageUrl: json['image'] ?? '',
     expiryDate: DateTime.fromMillisecondsSinceEpoch(json['expiryDate'] as int),
-    expired: json['expired'] as bool
+    expired: json['expired'] ?? false,
+    userId: json['userId'] ?? ''
   );
 }

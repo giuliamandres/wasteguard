@@ -10,20 +10,31 @@ class CreateAccountBloc extends Bloc<CreateAccountEvent, CreateAccountState> {
 
   CreateAccountBloc() : super(CreateAccountInitialState()) {
     on<CreateAccountButtonPressed>((event, emit) async {
-      emit(CreateAccountLoading());
+      emit(CreateAccountLoading()); // Show loading indicator immediately
+
       try {
-        final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(email: event.email, password: event.password);
-        if(userCredential.user != null){
-          await _databaseReference.child('users').child(userCredential.user!.uid).set(
-              {
-                'username' : event.username,
-              });
+        final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+          email: event.email,
+          password: event.password,
+        );
+
+        // Wait for user creation to complete
+        final user = userCredential.user;
+        if (user != null) {
+          // Wait for username to be saved to the database
+          await _databaseReference
+              .child('users')
+              .child(user.uid)
+              .set({
+            'username': event.username,
+          });
+
           emit(CreateAccountSuccess());
+        } else {
+          emit(CreateAccountFailure(error: 'Failed to create user.'));
         }
-      } on FirebaseAuthException catch (e) {
-        emit(CreateAccountFailure(error: e.message ?? "An unknown error occurred."));
       } catch (e) {
-        emit(CreateAccountFailure(error: "An unknown error occurred."));
+        emit(CreateAccountFailure(error: e.toString())); // Use e.toString() for a general exception
       }
     });
   }

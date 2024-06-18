@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +11,14 @@ class AllTrackedItemsPage extends StatelessWidget {
   AllTrackedItemsPage({required this.products});
 
   Future<void> _deleteProductFromDatabase(Product product) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      print("Error: User not authenticated.");
+      return;
+    }
     try {
-      final database = FirebaseDatabase.instance;
-      final productRef = database.ref().child('products');
+      final database = FirebaseDatabase.instance.ref();
+      final productRef = database.child('users/$userId/products');
       await productRef.child(product.id).remove();
     } catch (error) {
       print("Error deleting product from database: $error");
@@ -23,7 +29,10 @@ class AllTrackedItemsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:
+      body: products.isEmpty ?
+            const Center(
+              child: Text("You have no tracked items yet."),
+            ) :
           Stack(
             children: [
               ListView.builder(

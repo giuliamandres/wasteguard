@@ -15,8 +15,10 @@ import 'package:wasteguard/homepage.dart';
 
 
 class LoginScreen extends StatefulWidget {
-  LoginScreen({super.key});
+  final Function? onSignOut;
+  LoginScreen({Key? key, this.onSignOut}) : super(key: key);
 
+  @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
@@ -25,13 +27,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   bool _obscureText = true;
 
+  void clearLoginFields() {
+    emailController.clear();
+    passwordController.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<LoginBloc, LoginState>(
         listener: (context, state) {
           if(state is LoginSuccess) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => HomePage()),
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => HomePage(
+                onSignOut: () {
+                  final loginScreenState = context.findAncestorStateOfType<_LoginScreenState>();
+                  loginScreenState?.clearLoginFields();
+                },
+              )),
             );
           } else if (state is LoginFailure) {
             ScaffoldMessenger.of(context).showSnackBar(

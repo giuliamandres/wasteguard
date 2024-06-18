@@ -11,6 +11,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:wasteguard/Login/login.dart';
 import 'package:wasteguard/allTrackedItemsPage.dart';
 import 'package:wasteguard/expiringSoonItemsPage.dart';
 import 'package:wasteguard/notificationManager.dart';
@@ -23,7 +24,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 
 class HomePage extends StatefulWidget {
-  HomePage({Key? key}) : super(key: key);
+  final VoidCallback? onSignOut;
+  HomePage({Key? key, this.onSignOut}) : super(key: key);
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -53,7 +55,6 @@ class _HomePageState extends State<HomePage> {
       frequency: Duration(minutes: 2),
     );
 
-    _loadProductsFromSharedPreferences();
     _initializeNotifications();
     _fetchProducts().then((_) {
       _checkAndMarkExpiredItems();
@@ -85,8 +86,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _updateProductInDatabase(Product product) async {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
     try {
-      await database.child('products').child(product.id).update({
+      await database.child('users/$userId/products').child(product.id).update({
         'expired': product.expired,
       });
     } catch (error) {
@@ -95,18 +97,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchProducts() async {
-    final now = DateTime.now();
+    final userId = FirebaseAuth.instance.currentUser!.uid;
     try {
-      final snapshot = await database.child('products').get();
+      final snapshot = await database.child('users/$userId/products').get();
       if(snapshot.exists){
         final productList = snapshot.value as Map<dynamic, dynamic>;
         setState(() {
           _products = productList.entries.map((e) => Product.fromJson(e.value)).toList();
           _isExpiringSoon = _products.any((element) => _isExpiringSoonProduct(element));
         });
-
       }
       else {
+        setState(() {
+          _products = []; // Clear the list if no products are found
+        });
         print("No products found");
       }
     } on FirebaseException catch (e) {
@@ -229,16 +233,40 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchUsername() async {
     try {
-      final userSnapshot = await database.child('users').child(FirebaseAuth.instance.currentUser!.uid).get();
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      final userSnapshot = await database.child('users/$userId').get();
 
-      if(userSnapshot.exists) {
+      if (userSnapshot.exists && userSnapshot.value != null) {
         final userData = userSnapshot.value as Map<dynamic, dynamic>;
-        setState(() {
-          _username = userData['username'];
-        });
+        if (userData.containsKey('username')) { // Check if 'username' exists
+          setState(() {
+            _username = userData['username'];
+          });
+        } else {
+          // Handle the case where 'username' is not found
+          print("Username not found for user.");
+          // You can set a default username or display a message to the user here
+        }
+      } else {
+        // Handle the case where user data is not found
+        print("User data not found.");
       }
     } catch (error) {
       print("Error fetching username: $error");
+      // Handle errors appropriately (e.g., display an error message)
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      if (widget.onSignOut != null) {
+        widget.onSignOut!(); // Call the callback
+      }
+      print("User signed out successfully");
+    } catch (error) {
+      print("Error during sign out: $error");
     }
   }
 
@@ -247,6 +275,16 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Hello, ${_username ?? 'User'}!'),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+              onPressed: () async {
+                await _signOut();
+                Navigator.pop(context);
+              },
+              icon: Icon(Icons.logout)
+          )
+        ],
       ),
       body: Stack(
         children: [
