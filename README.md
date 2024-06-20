@@ -5,8 +5,8 @@ Wasteguard is a mobile app for iOS users which aims at diminishing the food wast
 The application is easy to use, with an intuitive user interface and features which provide to the user the opportunity to keep track of the products stored in the kitchen and efficiently manage inventory. Furthermore, it offers a recipe recommendation feature based on available ingredients, encouraging users to utilize what they have on hand and reduce the likelihood of food going to waste.
 
 ## Prerequequisites
-Operating system: macOS 10.15 (Catalina) or later
-Install the Flutter SDK. This can be downloaded from the official Flutter website: https://flutter.dev/docs/get-started/install
+Operating system: macOS 10.15 (Catalina) or later.
+Install the Flutter SDK. This can be downloaded from the official Flutter website: https://flutter.dev/docs/get-started/install.
 Install Xcode and CocoaPods if not already installed.
 
 
