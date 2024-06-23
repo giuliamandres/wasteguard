@@ -36,5 +36,3 @@ Running the app using the command line:
 flutter run
 ```
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
-
